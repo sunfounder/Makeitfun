@@ -1,0 +1,72 @@
+//This program is written to make a dialer. 
+
+#include <Tone.h>
+
+String Phone_Number = "";
+int i = 0, mark = 0;
+
+//Define freq1 and freq2 as Tone examples, and the frequency in the dual-tone multifrequency (DTMF)
+//For details of DTMF, refer to https://en.wikipedia.org/wiki/Dual-tone_multi-frequency_signaling
+Tone freq1;
+Tone freq2;
+const int DTMF_freq1[] = {1336, 1209, 1336, 1477, 1209, 1336, 1477, 1209, 1336, 1477};
+const int DTMF_freq2[] = {941,  697,  697,  697,  770,  770,  770,  852,  852,  852};
+
+void setup()
+{
+    Serial.begin(9600);
+    //Define the sound generated at pin D11 and D12 of the Arduino board
+    freq1.begin(11);
+    freq2.begin(12);
+}
+
+void loop()
+{
+    //Read data from the serial port, concatenate a Phone_Number string
+    while (Serial.available() > 0)
+    {
+        Phone_Number += char(Serial.read());
+        delay(2);
+        mark = 1;
+    }
+    //Play the DTMF audio, from Phone_Number, each lasting 200ms with an interval of 300ms
+    PlayDTMF(Phone_Number, 200, 300);
+        
+        //If the number just dailed is received. Since the number has been output, clear it and reset mark
+    if(mark == 1)
+    {
+        Phone_Number = "";
+        Serial.println();
+        mark = 0;
+    }
+}
+
+/*
+Function of DTMF play
+Call the format: playDTMF(number(0~9), duration).
+*/
+void PlayDTMF(String Number, long duration, long pause)
+{
+        //If the number entered is null, the duration or pause time is not a positive number,
+        //it's deemed error - stop running at once, return to the main routine.
+    if(Number.length() == 0 || duration <= 0 || pause <= 0) return;
+    //Separate elements in Number
+    for(i = 0; i < Number.length(); i++)
+    {
+        //If Number is a numnber within 0-9,
+        if(Number[i] >= '0' && Number[i] <= '9')
+        {
+            //ASCII minus 0, then a pure number is got,
+            Number[i] -= '0';
+            //The number will be output in the serial monitor for convenient check
+            Serial.print(Number[i], DEC);
+            //output one DTMF 
+            freq1.play(DTMF_freq1[Number[i]], duration);
+            //output a second DTMF
+            freq2.play(DTMF_freq2[Number[i]], duration);
+            delay(pause);
+        }
+    }
+
+
+}
